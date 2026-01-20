@@ -1,19 +1,19 @@
-// slim -d N_G=10000 -d POP_S=3000 -d AL=0.8 -d DEL=0.2 -d C=0.01 -d MUT=0.005 -d SI=0.01 -d N_S=200 herma_terminal_model4.slim
+// slim -d N_G=10000 -d POP_S=3000 -d AL=0.8 -d DEL=0.2 -d C=0.01 -d MUT=0.005 -d SI=0.01 -d N_S=200 simple_model.slim
 initialize() {
 	setwd("/home/samuel/Desktop/test");
 	initializeSLiMModelType("nonWF");
 	initializeSLiMOptions(preventIncidentalSelfing=T);
 	
-	defineConstant("N_GEN", N_G);
-	defineConstant("POP_SIZE", POP_S);
-	defineConstant("ALPHA", AL);
-	defineConstant("DELTA", DEL);
-	defineConstant("COST", C);
-	defineConstant("MUT_RATE", MUT);
-	defineConstant("SIGMA", SI);
-	//defineConstant("GAMMA", GAM);
-	defineConstant("N_SAMPLE", N_S);
+	defineConstant("N_GEN", N_G); // number of generation
+	defineConstant("POP_SIZE", POP_S); // population size (will be constant during the simulation)
+	defineConstant("ALPHA", AL); // proportion of pollen kept by each individual on its own stigmas
+	defineConstant("DELTA", DEL); // inbreeding depression
+	defineConstant("COST", C); // controls the effect of plasticity on fertility 
+	defineConstant("MUT_RATE", MUT); // mutation rate
+	defineConstant("SIGMA", SI); // mutation effect standard deviation
+	defineConstant("N_SAMPLE", N_S); // number of individuals to sample every 100 generation (to track the evolution of sex allocation)
 	
+	// creates mutation types, genomic elements and set mutation and recombination rates
 	initializeMutationRate(MUT_RATE);
 	initializeMutationType("m1", 0.5, "n", 0.0, SIGMA); 
 	initializeMutationType("m2", 0.5, "n", 0.0, SIGMA);
@@ -28,7 +28,6 @@ initialize() {
 	
 	catn("------------------------");
 	catn("PARAMETERS");
-	//catn("N_GEN=" + N_G + ", POP_SIZE=" + POP_S + ", ALPHA=" + AL + ", DELTA=" + DEL + ", MU=" + MUT + ", SIGMA=" + SI + ", GAMMA=" + GAM + ", N_SAMPLE=" + N_S);
 	catn("N_GEN=" + N_G + ", POP_SIZE=" + POP_S + ", ALPHA=" + AL + ", DELTA=" + DEL + ", COST=" + C + ", MU=" + MUT + ", SIGMA=" + SI + ", N_SAMPLE=" + N_S);
 	catn("------------------------");
 	
@@ -36,43 +35,48 @@ initialize() {
 
 /// ** CALLBACKS **
 
+//locus 1(a) and 2(b) evolve according to a continuum-of-allele model 
 mutation(m1) {
 	ancestral_value = haplosome.sumOfMutationsOfType(m1);
 	mut.setSelectionCoeff(ancestral_value + mut.selectionCoeff);
 	return T;
 }
-
 mutation(m2) {
 	ancestral_value = haplosome.sumOfMutationsOfType(m2);
 	mut.setSelectionCoeff(ancestral_value + mut.selectionCoeff);
 	return T;
 }
 
+// survival is independant of fitness, only the offsprings survive and become parents
 survival() {
-	// survival is independant of fitness, only the offsprings survive and become parents
 	return (individual.age == 0);
 }
 
+// reproduction is based on the fertilty of individuals (i.e. the amount of gamete they produced)
 reproduction() {
 	inds = p1.individuals;
 	
-	// la ou ya eu des changements ------------
-	// resources = create_resources(population_size=POP_SIZE, gamma=GAMMA);
+	// sample resource budget from a uniform distribution between 0 and 1
 	resources = runif(POP_SIZE);
 	
+	// calculate the phenotypes of each individuals
 	a = inds.sumOfMutationsOfType(1)/2;
 	b = inds.sumOfMutationsOfType(2)/2;
 	
+	// calculate sex allocation z based on phenotype a (the slope) and b (the intercept)
 	z = clamp(a * resources + b);
 	
+	// calculate amount of gamete of each type produced based on sex allocation and resource budget
+	// account for the cost of plasticity
 	female_gametes = z * resources * exp(-COST*a*a);
 	male_gametes = (1-z) * resources * exp(-COST*a*a);
-	// ----------------
 	
+	// calculate selfing rates based on amount of gamete produced by each individual (mass action process)
 	alphaM = ALPHA * male_gametes;
 	selfing_rates = alphaM / (alphaM + (1-ALPHA) * (sum(male_gametes) - male_gametes) / (POP_SIZE - 1));
 	inds.tagF = selfing_rates;
 	
+	// creates offspring by batch until enough were created and survived
 	offspring_count = 0;
 	while (offspring_count < POP_SIZE) {	
 		
@@ -87,8 +91,8 @@ reproduction() {
 		
 		total_selfing = sum(is_selfing);
 		if (total_selfing > 0) {
-			//checks if it survives
 		
+			//checks if it survives
 			total_survivors = rbinom(n=1, size=total_selfing, prob=(1-DELTA));
 			
 			// if more than zero selfed offspring survives, creates the offspring(s)
@@ -101,6 +105,7 @@ reproduction() {
 			}
 		}
 		
+		// the individuals that did not self-fertilize outcross
 		is_outcrossing = (is_selfing==F);
 		
 		total_outcrossing = sum(is_outcrossing);
@@ -108,6 +113,8 @@ reproduction() {
 		
 			offspring_count = offspring_count + total_outcrossing;
 			dams_outcrossing = dams[is_outcrossing];
+			
+			// find mates for outcrossing dams
 			for (d_o in dams_outcrossing) {
 				do sire = sample(inds, size=1, weights=male_gametes);
 				while(sire == d_o);
@@ -124,15 +131,17 @@ reproduction() {
 1 early() { 
 	// initialize population
 	sim.addSubpop("p1", POP_SIZE);
+	
+	// set initial values of alleles a and b
 	p1.haplosomes.addNewMutation(m1, selectionCoeff=0.0, position=0);
 	p1.haplosomes.addNewMutation(m2, selectionCoeff=0.5, position=1);
 	
+	// creates file for saving data troughout the simultion
 	ind_id = c();
 	for (i in 1:N_SAMPLE) ind_id = c(ind_id, paste("Ind", i, sep=""));
 	hapl_id = c();
 	for (i in 1:N_SAMPLE) hapl_id = c(hapl_id, paste("Hapl", i, sep=""));
 	
-	//file_name = paste(c("alpha", ALPHA, "delta", DELTA, "gamma", GAMMA, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "pop_size", POP_SIZE, "n_sampled", N_SAMPLE, "seed", getSeed()), sep="_");
 	file_name = paste(c("alpha", ALPHA, "delta", DELTA, "cost", COST, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "pop_size", POP_SIZE, "n_sampled", N_SAMPLE, "seed", getSeed()), sep="_");
 	file_name = paste(file_name, ".txt", sep="");
 	defineConstant("FILE_NAME", file_name);
@@ -142,6 +151,7 @@ reproduction() {
 
 2:N_GEN first() {
 	
+	// sample a few individual every 100 generation to follow the evolution of sex allocation
 	if (sim.cycle % 100 == 0) { 
 	
 		gen = sim.cycle;
@@ -171,16 +181,6 @@ reproduction() {
 
 /// ** FUNCTIONS ** 
 
-function (float)create_resources(integer population_size, float gamma) {
-	e = rnorm(population_size, mean=0, sd=1);
-	resources = exp(-gamma * e^2);
-	return(resources);
-}
-
 function (float)clamp(float v) {
 	return pmax( pmin(v, 1.0), 0.0);
-}
-
-function (float)clamp_mut(float v) {
-	return max( min(v, 1.2), -0.2);
 }
