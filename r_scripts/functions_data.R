@@ -32,7 +32,7 @@ extract_and_saves <- function(files,
   means_hapl <-  paste(write.wd, paste0(save_name, '_means_hapl.tsv'), sep = '/')
   
   sampled_ind <-  paste(write.wd, paste0(save_name, '_sampled_ind.tsv'), sep = '/')
-  sampled_hapl <-  paste(write.wd, paste0(save_name, '_sampled_ind.tsv'), sep = '/')
+  sampled_hapl <-  paste(write.wd, paste0(save_name, '_sampled_hapl.tsv'), sep = '/')
   
   file.create(means_ind)
   file.create(means_hapl)
