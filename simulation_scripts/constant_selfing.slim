@@ -144,7 +144,7 @@ reproduction() {
 	hapl_id = c();
 	for (i in 1:N_SAMPLE) hapl_id = c(hapl_id, paste("Hapl", i, sep=""));
 	
-	file_name = paste(c("selfingrate", SELFING_RATE, "delta", DELTA, "cost", COST, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "pop_size", POP_SIZE, "n_sampled", N_SAMPLE, "seed", getSeed()), sep="_");
+	file_name = paste(c("selfingrate", SELFING_RATE, "delta", DELTA, "cost", COST, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "popsize", POP_SIZE, "nsampled", N_SAMPLE, "seed", getSeed()), sep="_");
 	file_name = paste(file_name, ".txt", sep="");
 	defineConstant("FILE_NAME", file_name);
 	columns_name = paste(c("generation", "param", ind_id, hapl_id), sep="\t");
