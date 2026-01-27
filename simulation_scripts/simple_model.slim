@@ -11,7 +11,7 @@ initialize() {
 	defineConstant("COST", C); // controls the effect of plasticity on fertility 
 	defineConstant("MUT_RATE", MUT); // mutation rate
 	defineConstant("SIGMA", SI); // mutation effect standard deviation
-	defineConstant("N_SAMPLE", N_S); // number of individuals to sample every 100 generation (to track the evolution of sex allocation)
+	defineConstant("N_SAMPLE", N_S); // number of individuals to sample every 1000 generation (to track the evolution of sex allocation)
 	
 	// creates mutation types, genomic elements and set mutation and recombination rates
 	initializeMutationRate(MUT_RATE);
@@ -151,16 +151,14 @@ reproduction() {
 
 2:N_GEN first() {
 	
-	// sample a few individuals every 100 generation to follow the evolution of sex allocation
-	if (sim.cycle % 100 == 0) { 
+	// sample a few individuals every 1000 generation to follow the evolution of sex allocation
+	if (sim.cycle % 1000 == 0 | sim.cycle == 1) { 
 	
 		gen = sim.cycle;
 		
-		if (gen % 500 == 0) {
-			catn(sim.cycle + ":");
-			catn("slope: " + mean(p1.individuals.sumOfMutationsOfType(1)/2));
-			catn("intercept: " + mean(p1.individuals.sumOfMutationsOfType(2)/2));
-		}
+		catn(gen + ":");
+		catn("slope: " + mean(p1.individuals.sumOfMutationsOfType(1)/2));
+		catn("intercept: " + mean(p1.individuals.sumOfMutationsOfType(2)/2));
 		
 		inds_sampled = sample(p1.individuals, N_SAMPLE);
 		a_ind = inds_sampled.sumOfMutationsOfType(1)/2;
