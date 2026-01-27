@@ -3,7 +3,7 @@ library(tidyr)
 library(data.table)
 
 get_file_names <- function(wd) {
-  return(paste(wd, list.files(path = wd), sep = '/'))
+  return(list.files(path = wd))
 }
 
 read_file_name <- function(file.name, model = 'simple') {
@@ -21,11 +21,12 @@ read_file_name <- function(file.name, model = 'simple') {
 }
 
 extract_and_saves <- function(files, 
-                              every.gen = 1000, 
+                              every.gen = 5000, 
                               model = 'simple',
                               nind = 10,
                               nhapl = 10,
                               save_name,
+                              read.wd,
                               write.wd) {
   
   means_ind <- paste(write.wd, paste0(save_name, '_means_ind.tsv'), sep = '/')
@@ -47,9 +48,10 @@ extract_and_saves <- function(files,
     info <- read_file_name(f)
     
     # gets data from file and keeps only desired generations
-    data <- fread(f, header = TRUE) %>%
-      filter(generation %% every.gen == 0)
-    
+    data <- as.data.frame(fread(paste(read.wd, f, sep = '/'), header = TRUE))
+    selected_generations <- data[['generation']] %% every.gen == 0 | data[['generation']] == 10
+    data <- data[selected_generations, ]
+
     n_row <- nrow(data)
     n_param <- length(info[['columns']])
     
@@ -59,25 +61,27 @@ extract_and_saves <- function(files,
       col_name <- info[['columns']][i]
       value <- info[['parameter_values']][i]
       
-      if (col_name == 'nsampled') {n_sampled <- value}
+     # if (col_name == 'nsampled') {n_sampled <- as.integer(value)}
       
       if (is.null(parameters_simulation)) {
-        parameters_simulation <- data.frame(col_name = rep(value, times = n_row))
+        parameters_simulation <- matrix(rep(value, times = n_row))
       } else {
         parameters_simulation <- cbind(parameters_simulation, 
-                                       data.frame(col_name = rep(value, times = n_row)))
+                                       matrix(rep(value, times = n_row)))
       }
     }
+    colnames(parameters_simulation) <- info[['columns']]
+    parameters_simulation <- as.data.frame(parameters_simulation)
+    
+    n_sampled <- as.integer(info[['parameter_values']][info[['columns']] == 'nsampled'])
     
     # creates two datasets, one contains phenotypes and the other contains allele values
     data_ind <- cbind(parameters_simulation, data[,1:(n_sampled+2)])
-    print(head(data_ind))
     data_hapl <- cbind(parameters_simulation, data[,c(1,2,(n_sampled+3):(n_sampled*2+2))])
-    print(head(data_hapl))
-    
+
     # saves the mean phenotype and allele every desired generation
     write.table(
-      cbind(parameters_simulation, data.frame(means = rowMeans(data_ind[,-c(1:(n_param+2))]))),
+      cbind(parameters_simulation, data.frame(means = rowMeans(data_ind[,-c(1:(n_param+2))]))), ## ATTENTION CA SÉLECTIONNE PAS BIEN (IL MANGE LES GÉNÉRATIONS ET SLOPE/INTERCEPT)
       file = means_ind,
       sep = "\t",
       row.names = FALSE,
