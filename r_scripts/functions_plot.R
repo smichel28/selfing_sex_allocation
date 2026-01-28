@@ -9,15 +9,18 @@ boxplot_pheno <- function(alpha,
                           jitter.level = 1, 
                           point.size = 1) {
   
+  # creates plot structure and layout
   deltas <- sort(unique(delta))
   par(mfrow = c(1,length(deltas)), 
       bty = 'n', 
       pch = 16, 
-      cex.axis = 1.7,
+      cex.axis = 1.3,
       cex.main = 2,
       mar = c(2, 2, 2, 2),
       oma = c(4, 4, 1, 0),
       mgp = c(3.5, 1, 0))
+  
+  # creates plots
   first <- TRUE
   for (d in deltas) {
     selection <- delta == d
@@ -28,6 +31,7 @@ boxplot_pheno <- function(alpha,
     lab <- levels(a)
     x <- jitter(as.numeric(a), jitter.level)
     
+    # creates points
     if (first) {
       plot(x, y,
            col = color[p],
@@ -50,12 +54,11 @@ boxplot_pheno <- function(alpha,
     first <- FALSE
     axis(1, at = seq_along(lab), labels = lab)
     
+    # adds ablines to mark starting value
     abline(h = 0.5, lty = 2, col = color[1])
     abline(h = 0, lty = 2, col = color[2])
     
-    mtext(xlabel, side = 1, outer = TRUE, line = 2, cex = 1.5)
-    mtext(ylabel, side = 2, outer = TRUE, line = 2, cex = 1.5)
-    
+    # adds boxplots for each parameter (slope & intercept)
     for (i in levels(p)) {
       
       select_p <- p==i
@@ -72,5 +75,42 @@ boxplot_pheno <- function(alpha,
     
   }
   
+  # adds axis labels
+  mtext(xlabel, side = 1, outer = TRUE, line = 2, cex = 1.5)
+  mtext(ylabel, side = 2, outer = TRUE, line = 2, cex = 1.5)
+  
 }
+
+sample_through_time <- function(gen,
+                                value,
+                                param,
+                                delta,
+                                color = c('blue', 'red'),
+                                xlabel = expression("Generation [x" * 10^3 * "]"),
+                                ylabel = 'Value') {
+  
+  # creates plot structure and layout
+  par(mfrow=c(1,1), 
+      bty = 'l',
+      pch = 16, 
+      cex.axis = 1.3,
+      cex.lab = 1.5,
+      cex.main = 2,
+      mar = c(5, 5, 2, 2))
+  
+  # creates scatter plot
+  plot(gen/1000, value, 
+       col = color[param],
+       xlab = xlabel,
+       ylab = ylabel)
+  # adds legend
+  legend(0.5, 1.15, legend = levels(param), col = color, pch = 16, cex = 1.5)
+}
+
+
+## To test ##
+
+data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE)
+
+sample_through_time(data$generation, data$Param_value, param = factor(data$param), delta = data$delta)
 
