@@ -107,10 +107,16 @@ sample_through_time <- function(gen,
   legend(0.5, 1.15, legend = levels(param), col = color, pch = 16, cex = 1.5)
 }
 
-
 ## To test ##
+library(dplyr)
+library(tidyr)
 
-data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE)
+data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
+  filter(seed == 7197913992516104192)
 
 sample_through_time(data$generation, data$Param_value, param = factor(data$param), delta = data$delta)
+
+data1 <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
+  filter(seed == 7197913992516104192) %>%
+  pivot_wider(names_from = param, values_from = Param_value)
 
