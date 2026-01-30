@@ -1,6 +1,6 @@
 // slim -d N_G=10000 -d POP_S=3000 -d AL=0.8 -d DEL=0.2 -d C=0.01 -d MUT=0.005 -d SI=0.01 -d N_S=200 simple_model.slim
 initialize() {
-	setwd("/home/samuel/Desktop/test");
+	setwd("/home/samuel/selfing_sex_alloc/data/simple_model");
 	initializeSLiMModelType("nonWF");
 	initializeSLiMOptions(preventIncidentalSelfing=T);
 	
@@ -156,9 +156,9 @@ reproduction() {
 	
 		gen = sim.cycle;
 		
-		catn(gen + ":");
-		catn("slope: " + mean(p1.individuals.sumOfMutationsOfType(1)/2));
-		catn("intercept: " + mean(p1.individuals.sumOfMutationsOfType(2)/2));
+		//catn(gen + ":");
+		//catn("slope: " + mean(p1.individuals.sumOfMutationsOfType(1)/2));
+		//catn("intercept: " + mean(p1.individuals.sumOfMutationsOfType(2)/2));
 		
 		inds_sampled = sample(p1.individuals, N_SAMPLE);
 		a_ind = inds_sampled.sumOfMutationsOfType(1)/2;
