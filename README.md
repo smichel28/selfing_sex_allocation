@@ -4,9 +4,15 @@ Uses individual-based simulations to follow the evolution of sex allocation unde
 
 ## simulation_scripts
 
-- **slim_models**
+**slim_models**
   - *simple_model.slim*: base model which implements competing selfing and variable resource budget
   - *constant_selfing.slim*: similar to simple_model.slim but selfing rate is fixed (i.e. is independent of resource budget and sex allocation)
-  
+
+**simulation_launcher**
+  contains python and bash scripts to launch simulations as subprocess in parallel
+ 
 ## r_scripts
 
+**functions**
+  - *function_data.R*: contains function to collect and summarize results from simulations
+  - *function_plot.R*: contains functions to create plots
