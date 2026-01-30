@@ -80,7 +80,7 @@ reproduction() {
 	// calculates the amount of seeds produced by each individual (taking in account selfing rate & inbreeding depression)
 	seeds = female_gametes * (1 - selfing_rates * DELTA);
 	
-	// calculates probability that a patch will be colonized by a seed coming from the individual growing that same patch
+	// calculates probability that a patch will be colonized by a seed coming from the individual growing on that same patch
 	local_seeds = seeds * (1 - MIGRATION);
 	
 	
@@ -99,7 +99,7 @@ reproduction() {
 	
 	p_selfing_and_local = dam_local.tagF * (1 - DELTA) / ( 1 - dam_local.tagF * DELTA);
 	
-	is_selfing_and_local = runif(sum(is_local)) < p_selfing_and_local
+	is_selfing_and_local = runif(sum(is_local)) < p_selfing_and_local;
 	
 	for (d_s in dam_local[is_selfing_and_local]) p1.addSelfed(d_s);
 	
@@ -111,16 +111,19 @@ reproduction() {
 	
 	// creating offsprings for patches where the offspring will not have the local dam as its mother
 	is_not_local = is_local == F;
+	dam_not_local = inds[is_not_local]
+	
 	sires = sample(inds, size=sum(is_not_local), replace=T, weights=male_gametes);
 	
-	for (d in inds[is_not_local]) {
+	for (i in seqAlong(dam_not_local)) {
 				
 		do dam = sample(inds, size=1, weights=seeds);
-		while (dam == d); // makes sure that the selected dam is not the local dam
+		while (dam == dam_not_local[i]); // makes sure that the selected dam is not the local dam
 		
 		p_self_and_not_local = dam.tagF * (1 - DELTA) / (1 - dam.tagF * DELTA);
+		
 		if (runif(1) < p_self_and_not_local) p1.addSelfed(dam);
-		else p1.addCrossed(sire[i]) // changer la boucle for pour qu'elle fasse des indices i
+		else p1.addCrossed(dam, sires[i]);
 		
 	}
 	
