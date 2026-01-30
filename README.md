@@ -1,18 +1,18 @@
-# selfing_sex_allocation
+# /selfing_sex_allocation
 Project investigating the effect of competing self-fertilization and local resource competition on sex allocation in hermaphrodites.
 Uses individual-based simulations to follow the evolution of sex allocation under different situations.
 
-## simulation_scripts
+## /simulation_scripts
 
-**slim_models**
+**/slim_models**
   - *simple_model.slim*: base model which implements competing selfing and variable resource budget
   - *constant_selfing.slim*: similar to simple_model.slim but selfing rate is fixed (i.e. is independent of resource budget and sex allocation)
 
-**simulation_launcher**
+**/simulation_launcher**
   contains python and bash scripts to launch simulations as subprocess in parallel
  
-## r_scripts
+## /r_scripts
 
-**functions**
+**/functions**
   - *function_data.R*: contains function to collect and summarize results from simulations
   - *function_plot.R*: contains functions to create plots
