@@ -2,7 +2,9 @@
 initialize() {
 	setwd("/home/samuel/Desktop/test");
 	initializeSLiMModelType("nonWF");
-	initializeSLiMOptions(preventIncidentalSelfing=T);
+	
+	// SET TO TRUE IF YOU WANT TO PREVENT INCIDENTAL SELFING
+	initializeSLiMOptions(preventIncidentalSelfing=F); 
 	
 	defineConstant("N_GEN", N_G); // number of generation
 	defineConstant("POP_SIZE", POP_S); // population size (will be constant during the simulation)
