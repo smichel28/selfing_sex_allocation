@@ -80,33 +80,81 @@ reproduction() {
 	// calculates the amount of seeds produced by each individual (taking in account selfing rate & inbreeding depression)
 	seeds = female_gametes * (1 - selfing_rates * DELTA);
 	
-	// =========================
-	// ****local****
+	// ***************
+	// **** local ****
+	// ***************	
 	// calculates probability that a patch will be colonized by a seed coming from the individual growing on that same patch
+	
+	// calculates the amount of seeds that does not disperse on other patches
 	local_seeds = seeds * (1 - MIGRATION);
 	
+	// probability that a local seed will colonize each patch
 	p_local = local_seeds / (local_seeds + MIGRATION * (sum(seeds) - seeds) / (POP_SIZE - 1));
 	
 	is_local = runif(POP_SIZE) < p_local;
-	dam_local = inds[is_local];
+	dam_local = inds[is_local]; // patches (i.e. dams) that will have a local offspring
 	
-	p_selfing_and_local = dam_local.tagF * (1 - DELTA) / ( 1 - dam_local.tagF * DELTA);
+	// calculates the probability that the local offspring will be born through selfing
+	p_selfing_and_local = dam_local.tagF * (1 - DELTA) / ( 1 - dam_local.tagF * DELTA); 
 	is_selfing_and_local = runif(sum(is_local)) < p_selfing_and_local;
 	
 	for (d_s in dam_local[is_selfing_and_local]) p1.addSelfed(d_s); // selfing
+	
+	is_outcrossing_and_local = is_selfing_and_local == F;
+	dam_local_outcrossing = dam_local[is_outcrossing_and_local];
+	
+	// sample sires for local offspring that will be born through outcrossing
+	sires_for_dam_local_outcrossing = sample(inds, size=sum(is_outcrossing_and_local), replace=T, weights=male_gametes);
+	
+	for (i in seqAlong(dam_local_outcrossing)) { // outcrossing (note that there is a probability P=1/POP_SIZE that selfing still happens)
+		p1.addCrossed(dam_local_outcrossing[i], sires_for_dam_local_outcrossing[i]); 
+	}
+	
+	/*
+	
+	Block of code that makes sure that there is no incidental selfing when outcrossing should happen
+	Safer but slower !
 	
 	for (d_o in dam_local[is_selfing_and_local == F]) { // outcrossing
 		do sire = sample(inds, size=1, weights=male_gametes);
 		while (sire == d_o);
 		p1.addCrossed(d_o, sire);
 	}
+	*/
 	
-	// =========================
-	// ****not local****
+	// *******************
+	// **** not local ****
+	// *******************
 	// creating offsprings for patches where the offspring will not have the local dam as its mother
 	is_not_local = is_local == F;
-	dam_not_local = inds[is_not_local];
+	dam_not_local = inds[is_not_local]; // patches where dams will not have an offspring maternally
+	n_not_local = sum(is_not_local);
+	
+	// sample sires for non local offsprings (in case of outcrossing)
+	sires_for_dam_not_local = sample(inds, size=n_not_local, replace=T, weights=male_gametes);
+	
+	// makes uniform sampling in advance to check whether selfing or outcrossing happens
+	sampling_for_selfing = runif(n_not_local);
+	
+	for (i in seqAlong(dam_not_local)) {
 		
+		// sample randomly a dam and makes sure that it is not the local dam
+		do dam = sample(inds, size=1, weights=seeds);
+		while (dam == dam_not_local[i]); 
+		
+		// calculate the probability that the selected dam will self-fertilize
+		p_self_and_not_local = dam.tagF * (1 - DELTA) / (1 - dam.tagF * DELTA);
+		
+		if (sampling_for_selfing[i] < p_self_and_not_local) p1.addSelfed(dam); // selfing
+		else p1.addCrossed(dam, sires_for_dam_not_local[i]); // outcrossing (note that there is a probability P=1/POP_SIZE that selfing still happens)
+			
+	}
+	
+	/* 
+	
+	Block of code that makes sure that there is no incidental selfing when outcrossing should happen
+	Safer but slower !
+	
 	for (d_n_l in dam_not_local) {
 				
 		do dam = sample(inds, size=1, weights=seeds);
@@ -121,6 +169,7 @@ reproduction() {
 			p1.addCrossed(dam, sire); 
 		}
 	}
+	*/
 	
 	self.active = 0;
 }
