@@ -1,4 +1,4 @@
-// slim -d N_G=10000 -d POP_S=3000 -d AL=0.8 -d DEL=0.2 -d C=0.01 -d MUT=0.005 -d SI=0.01 -d N_S=200 simple_model.slim
+// slim -d N_G=2001 -d POP_S=10000 -d AL=0.8 -d DEL=0.2 -d MIG=0.1 -d C=0.01 -d MUT=0.005 -d SI=0.01 -d N_S=200 LRC.slim
 initialize() {
 	setwd("/home/samuel/Desktop/test");
 	initializeSLiMModelType("nonWF");
@@ -71,8 +71,9 @@ reproduction() {
 	
 	// calculates amount of gamete of each type produced based on sex allocation and resource budget
 	// account for the cost of plasticity
-	female_gametes = z * resources * exp(-COST*a*a);
-	male_gametes = (1-z) * resources * exp(-COST*a*a);
+	plasticity_cost = exp(-COST*a*a);
+	female_gametes = z * resources * plasticity_cost;
+	male_gametes = (1-z) * resources * plasticity_cost;
 	
 	// calculates selfing rates based on amount of gamete produced by each individual (mass action process)
 	alphaM = ALPHA * male_gametes;
@@ -192,7 +193,7 @@ reproduction() {
 	hapl_id = c();
 	for (i in 1:N_SAMPLE) hapl_id = c(hapl_id, paste("Hapl", i, sep=""));
 	
-	file_name = paste(c("alpha", ALPHA, "delta", DELTA, "cost", COST, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "popsize", POP_SIZE, "nsampled", N_SAMPLE, "seed", getSeed()), sep="_");
+	file_name = paste(c("alpha", ALPHA, "delta", DELTA, "mig", MIGRATION, "cost", COST, "mu", MUT_RATE, "sigma", SIGMA, "gen", N_GEN, "popsize", POP_SIZE, "nsampled", N_SAMPLE, "seed", getSeed()), sep="_");
 	file_name = paste(file_name, ".txt", sep="");
 	defineConstant("FILE_NAME", file_name);
 	columns_name = paste(c("generation", "param", ind_id, hapl_id), sep="\t");
