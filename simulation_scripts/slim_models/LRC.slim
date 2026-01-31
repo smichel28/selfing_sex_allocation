@@ -80,101 +80,48 @@ reproduction() {
 	// calculates the amount of seeds produced by each individual (taking in account selfing rate & inbreeding depression)
 	seeds = female_gametes * (1 - selfing_rates * DELTA);
 	
+	// =========================
+	// ****local****
 	// calculates probability that a patch will be colonized by a seed coming from the individual growing on that same patch
 	local_seeds = seeds * (1 - MIGRATION);
 	
-	
-	
-	
-	
-	p_local = local_seeds / (local_seeds + (sum(seeds) - seeds) * MIGRATION); // FAUT IL DIVISER PAR POP_SIZE-1 ????
-	
-	
-	
-	
+	p_local = local_seeds / (local_seeds + MIGRATION * (sum(seeds) - seeds) / (POP_SIZE - 1));
 	
 	is_local = runif(POP_SIZE) < p_local;
-	
 	dam_local = inds[is_local];
 	
 	p_selfing_and_local = dam_local.tagF * (1 - DELTA) / ( 1 - dam_local.tagF * DELTA);
-	
 	is_selfing_and_local = runif(sum(is_local)) < p_selfing_and_local;
 	
-	for (d_s in dam_local[is_selfing_and_local]) p1.addSelfed(d_s);
+	for (d_s in dam_local[is_selfing_and_local]) p1.addSelfed(d_s); // selfing
 	
-	for (d_o in dam_local[is_selfing_and_local == F]) {
+	for (d_o in dam_local[is_selfing_and_local == F]) { // outcrossing
 		do sire = sample(inds, size=1, weights=male_gametes);
 		while (sire == d_o);
 		p1.addCrossed(d_o, sire);
 	}
 	
+	// =========================
+	// ****not local****
 	// creating offsprings for patches where the offspring will not have the local dam as its mother
 	is_not_local = is_local == F;
-	dam_not_local = inds[is_not_local]
-	
-	sires = sample(inds, size=sum(is_not_local), replace=T, weights=male_gametes);
-	
-	for (i in seqAlong(dam_not_local)) {
+	dam_not_local = inds[is_not_local];
+		
+	for (d_n_l in dam_not_local) {
 				
 		do dam = sample(inds, size=1, weights=seeds);
-		while (dam == dam_not_local[i]); // makes sure that the selected dam is not the local dam
+		while (dam == d_n_l); // makes sure that the selected dam is not the local dam
 		
 		p_self_and_not_local = dam.tagF * (1 - DELTA) / (1 - dam.tagF * DELTA);
 		
-		if (runif(1) < p_self_and_not_local) p1.addSelfed(dam);
-		else p1.addCrossed(dam, sires[i]);
-		
+		if (runif(1) < p_self_and_not_local) p1.addSelfed(dam); // selfing
+		else { // outcrossing
+			do sire = sample(inds, size=1, weights=male_gametes);
+			while (sire == dam);
+			p1.addCrossed(dam, sire); 
+		}
 	}
 	
-	
-	// creates offspring by batch until enough were created and survived
-	offspring_count = 0;
-	while (offspring_count < POP_SIZE) {	
-		
-		// number of offspring that still need to be created
-		to_do = POP_SIZE - offspring_count;
-		
-		// sampling as many dams as their is offsprings that needs to be created
-		dams = sample(inds, size = to_do, replace=T, weights=female_gametes);
-		
-		// checks if the potential offspring comes from selfing
-		is_selfing = runif(to_do) < dams.tagF;
-		
-		total_selfing = sum(is_selfing);
-		if (total_selfing > 0) {
-		
-			//checks if it survives
-			total_survivors = rbinom(n=1, size=total_selfing, prob=(1-DELTA));
-			
-			// if more than zero selfed offspring survives, creates the offspring(s)
-			if (total_survivors > 0) { 
-		
-				offspring_count = offspring_count + total_survivors;	
-				dams_selfing = dams[is_selfing][0:(total_survivors-1)];
-				for (d_s in dams_selfing) p1.addSelfed(d_s);
-			
-			}
-		}
-		
-		// the individuals that did not self-fertilize outcross
-		is_outcrossing = (is_selfing==F);
-		
-		total_outcrossing = sum(is_outcrossing);
-		if (total_outcrossing > 0) {
-		
-			offspring_count = offspring_count + total_outcrossing;
-			dams_outcrossing = dams[is_outcrossing];
-			
-			// find mates for outcrossing dams
-			for (d_o in dams_outcrossing) {
-				do sire = sample(inds, size=1, weights=male_gametes);
-				while(sire == d_o);
-				p1.addCrossed(d_o, sire);
-			}	
-			
-		}
-	}	
 	self.active = 0;
 }
 
