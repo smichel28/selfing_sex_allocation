@@ -84,39 +84,101 @@ boxplot_pheno <- function(alpha,
 sample_through_time <- function(gen,
                                 value,
                                 param,
-                                delta,
+                                alpha,
                                 color = c('blue', 'red'),
                                 xlabel = expression("Generation [x" * 10^3 * "]"),
                                 ylabel = 'Value') {
   
+  param <- as.factor(param)
+  
   # creates plot structure and layout
-  par(mfrow=c(1,1), 
-      bty = 'l',
+  par(bty = 'l',
       pch = 16, 
       cex.axis = 1.3,
       cex.lab = 1.5,
       cex.main = 2,
       mar = c(5, 5, 2, 2))
   
-  # creates scatter plot
-  plot(gen/1000, value, 
-       col = color[param],
-       xlab = xlabel,
-       ylab = ylabel)
-  # adds legend
-  legend(0.5, 1.15, legend = levels(param), col = color, pch = 16, cex = 1.5)
+  for (a in unique(alpha)) {
+    sel_alpha <- alpha == a
+    g <- gen[sel_alpha]
+    # creates scatter plot
+    plot(g/1000, 
+         value[sel_alpha], 
+         col = color[param[sel_alpha]],
+         xlab = xlabel,
+         ylab = ylabel,
+         main = paste0("\u03B1 = ", a))
+    # adds legend
+    legend(0.5, max(value[sel_alpha]), legend = levels(param), col = color, pch = 16, cex = 1)
+  }
+}
+
+mean_through_time <- function(gen,
+                              value,
+                              param,
+                              alpha,
+                              delta,
+                              sim,
+                              color = c('orange', 'darkblue'),
+                              xlabel = 'Generation',
+                              ylabel = 'Mean value',
+                              xlimit = c(0,100000),
+                              ylimit = c(0,1)
+                              ) {
+  
+  al <- unique(alpha)
+  del <- unique(delta)
+
+  for(a in al) {
+    for (d in del) {
+      
+      # plotting the evolution of the mean is useless when delta > 0.5 due to branching
+      if (d > 0.5 | d == "0.6") next
+      
+      seeds <- unique(sim[alpha == a & delta == d])
+      
+      for (i in 1:length(seeds)) {
+        if (i == 1) {
+          plot(gen[sim == seeds[1] & param == 'intercept'], 
+               value[sim == seeds[1] & param == 'intercept'],
+               type = 'l',
+               col = color[1],
+               xlim = xlimit,
+               ylim = ylimit,
+               xlab = xlabel,
+               ylab = ylabel,
+               main = paste0("\u03B1 = ", a, ", \u03B4 = ", d),
+               bty = 'l')
+          lines(gen[sim == seeds[1] & param == 'slope'], 
+                value[sim == seeds[1] & param == 'slope'],
+                col = color[2])
+        } else {
+          lines(gen[sim == seeds[i] & param == 'intercept'], 
+                value[sim == seeds[i] & param == 'intercept'],
+                col = color[1])
+          lines(gen[sim == seeds[i] & param == 'slope'], 
+                value[sim == seeds[i] & param == 'slope'],
+                col = color[2])
+        }
+      }
+        
+    }
+  }
+  
+  
 }
 
 ## To test ##
-library(dplyr)
-library(tidyr)
-
-data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
-  filter(seed == 7197913992516104192)
-
-sample_through_time(data$generation, data$Param_value, param = factor(data$param), delta = data$delta)
-
-data1 <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
-  filter(seed == 7197913992516104192) %>%
-  pivot_wider(names_from = param, values_from = Param_value)
-
+# 
+# library(dplyr)
+# library(tidyr)
+# 
+# data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
+#   filter(seed == 7197913992516104192)
+# 
+# sample_through_time(data$generation, data$Param_value, param = factor(data$param), delta = data$delta)
+# 
+# data1 <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
+#   filter(seed == 7197913992516104192) %>%
+#   pivot_wider(names_from = param, values_from = Param_value)
