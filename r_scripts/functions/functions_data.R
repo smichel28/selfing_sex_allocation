@@ -22,7 +22,6 @@ read_file_name <- function(file.name, model = 'simple') {
 
 extract_and_saves <- function(files, 
                               every.gen = 5000, 
-                              model = 'simple',
                               nind = 10,
                               nhapl = 10,
                               save.name,
