@@ -119,6 +119,7 @@ mean_through_time <- function(gen,
                               param,
                               alpha,
                               delta,
+                              migration = NULL,
                               sim,
                               color = c('orange', 'darkblue'),
                               xlabel = 'Generation',
@@ -129,43 +130,57 @@ mean_through_time <- function(gen,
   
   al <- unique(alpha)
   del <- unique(delta)
-
-  for(a in al) {
-    for (d in del) {
-      
-      # plotting the evolution of the mean is useless when delta > 0.5 due to branching
-      if (d > 0.5 | d == "0.6") next
-      
-      seeds <- unique(sim[alpha == a & delta == d])
-      
-      for (i in 1:length(seeds)) {
-        if (i == 1) {
-          plot(gen[sim == seeds[1] & param == 'intercept'], 
-               value[sim == seeds[1] & param == 'intercept'],
-               type = 'l',
-               col = color[1],
-               xlim = xlimit,
-               ylim = ylimit,
-               xlab = xlabel,
-               ylab = ylabel,
-               main = paste0("\u03B1 = ", a, ", \u03B4 = ", d),
-               bty = 'l')
-          lines(gen[sim == seeds[1] & param == 'slope'], 
-                value[sim == seeds[1] & param == 'slope'],
-                col = color[2])
-        } else {
-          lines(gen[sim == seeds[i] & param == 'intercept'], 
-                value[sim == seeds[i] & param == 'intercept'],
-                col = color[1])
-          lines(gen[sim == seeds[i] & param == 'slope'], 
-                value[sim == seeds[i] & param == 'slope'],
-                col = color[2])
-        }
-      }
+  
+  migration_is_null <- is.null(migration)
+  
+  if (!migration_is_null) mig <- unique(migration)
+  else mig <- 1
+    
+    
+  for (m in mig) {
+    for (a in al) {
+      for (d in del) {
         
+        # plotting the evolution of the mean is useless when delta > 0.5 due to branching
+        if (d > 0.5 | d == "0.6") next
+        
+        if (migration_is_null) {
+          seeds <- unique(sim[alpha == a & delta == d])
+          title <- paste0("\u03B1 = ", a, ", \u03B4 = ", d)
+        }
+        else {
+          seeds <- unique(sim[alpha == a & delta == d & migration == m])
+          title <- paste0("\u03B1 = ", a, ", \u03B4 = ", d, ", m = ", m)
+        }
+        
+        for (i in 1:length(seeds)) {
+          if (i == 1) {
+            plot(gen[sim == seeds[1] & param == 'intercept'], 
+                 value[sim == seeds[1] & param == 'intercept'],
+                 type = 'l',
+                 col = color[1],
+                 xlim = xlimit,
+                 ylim = ylimit,
+                 xlab = xlabel,
+                 ylab = ylabel,
+                 main = title,
+                 bty = 'l')
+            lines(gen[sim == seeds[1] & param == 'slope'], 
+                  value[sim == seeds[1] & param == 'slope'],
+                  col = color[2])
+          } else {
+            lines(gen[sim == seeds[i] & param == 'intercept'], 
+                  value[sim == seeds[i] & param == 'intercept'],
+                  col = color[1])
+            lines(gen[sim == seeds[i] & param == 'slope'], 
+                  value[sim == seeds[i] & param == 'slope'],
+                  col = color[2])
+          }
+        }
+          
+      }
     }
   }
-  
   
 }
 
