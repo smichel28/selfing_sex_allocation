@@ -27,6 +27,14 @@ with(
                     sim = seed)
 )
 
+ess <- calculate_ess(mean_data, model = "LRC")
+
+for (m in unique(ess$migration)) {
+  df <- ess[ess$migration==m,]
+  with(data = df,
+       boxplot_pheno(alpha, mean, param, delta, color = c("orange", "darkblue")))
+}
+
 #.....................
 # sampling random individuals through time
 # 

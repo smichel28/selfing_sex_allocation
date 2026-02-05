@@ -9,6 +9,10 @@ boxplot_pheno <- function(alpha,
                           jitter.level = 1, 
                           point.size = 1) {
   
+  alpha <- factor(alpha)
+  param <- factor(param)
+  delta <- factor(delta)
+  
   # creates plot structure and layout
   deltas <- sort(unique(delta))
   par(mfrow = c(1,length(deltas)), 
@@ -181,6 +185,82 @@ mean_through_time <- function(gen,
       }
     }
   }
+  
+}
+
+calculate_ess <- function(df,
+                          model = "simple",
+                          start = 50000) {
+  
+  selected_gen <- which(df[['generation']] >= start)
+  df <- df[selected_gen,]
+  
+  delta <- df[['delta']]
+  seed <- df[['seed']]
+  param <- df[['param']]
+  means <- df[['means']]
+  migration <- 1
+  
+  ess <- data.frame(matrix(ncol = 5, nrow = 0))
+  
+  if (model == "simple") {
+    selfing <- df[['alpha']]
+  } else if (model == "LRC") {
+    selfing <- df[['alpha']] 
+    migration <- df[['mig']]
+    ess <- data.frame(matrix(ncol = 6, nrow = 0))
+  } else if (model == "constant") {
+    selfing <- df[['selfingrate']]
+  } else {
+    print("non-valid model name!") 
+    return(0)
+  }
+
+  
+  
+  for (mig in unique(migration)) {
+      
+    selected_mig <- migration == mig
+    
+    for (sel in unique(selfing)) {
+      
+      selected_selfing <- selfing == sel
+        
+      for (del in unique(delta)) {
+          
+        selected_delta <- delta == del
+            
+        for (see in unique(seed[selected_delta & selected_selfing & selected_mig])) {
+          
+          for (par in c("slope", "intercept")) {
+            m <- mean(means[seed == see & param == par])
+            if (model == "simple") {
+              ess <- rbind(ess, data.frame(alpha = sel, 
+                                           delta = del, 
+                                           seed = see, 
+                                           param = par, 
+                                           mean = m))
+            } else if (model == "LRC") {
+              ess <- rbind(ess, data.frame(alpha = sel, 
+                                           delta = del, 
+                                           migration = mig, 
+                                           seed = see, 
+                                           param = par, 
+                                           mean = m))
+            } else {
+              ess <- rbind(ess, data.frame(selfingrate = sel, 
+                                           delta = del, 
+                                           seed = see, 
+                                           param = par, 
+                                           mean = m))
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return(ess)
   
 }
 
