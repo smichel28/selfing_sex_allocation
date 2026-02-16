@@ -6,6 +6,7 @@ boxplot_pheno <- function(alpha,
                           color,
                           xlabel = '\u03B1', 
                           ylabel = 'Mean value',
+                          ylimit = c(0, 1),
                           jitter.level = 1, 
                           point.size = 1) {
   
@@ -15,7 +16,14 @@ boxplot_pheno <- function(alpha,
   
   # creates plot structure and layout
   deltas <- sort(unique(delta))
-  par(mfrow = c(1,length(deltas)), 
+  
+  if (0.6 %in% deltas | "0.6" %in% deltas) {
+    n_delta <- length(deltas) - 1 
+  } else {
+    n_delta <- length(deltas)
+  }
+  
+  par(mfrow = c(1,n_delta), 
       bty = 'n', 
       pch = 16, 
       cex.axis = 1.3,
@@ -27,6 +35,9 @@ boxplot_pheno <- function(alpha,
   # creates plots
   first <- TRUE
   for (d in deltas) {
+    
+    if (d == "0.6" | d > 0.5 ) next
+    
     selection <- delta == d
     a <- alpha[selection]
     p <- param[selection]
@@ -43,7 +54,8 @@ boxplot_pheno <- function(alpha,
            ylab = '',
            xaxt = 'n',
            yaxt = 'n',
-           main = paste('\u03B4 =', d))
+           main = paste('\u03B4 =', d),
+           ylim = ylimit)
       axis(2, pos = 0.5)
       legend(1, 0.8, legend = c('b', 'a'), pch = 16, col = color)
     } else {
@@ -53,7 +65,8 @@ boxplot_pheno <- function(alpha,
            yaxt = 'n',
            xlab = '',
            ylab = '',
-           main = paste('\u03B4 =', d))
+           main = paste('\u03B4 =', d),
+           ylim = ylimit)
     }
     first <- FALSE
     axis(1, at = seq_along(lab), labels = lab)
