@@ -17,7 +17,7 @@ for (f in filter_files) {
   selected_files <- c(selected_files, as.numeric(strsplit(name, "_")[[1]][1]))
 }
 
-for (m in c(0.01, 0.05, 0.1, 0.5)) {
+for (m in c(0.01, 0.05, 0.1, 0.5, 0.9, 0.95)) {
   
   cat(paste0("Processing files migration = ", m, "\n"))
   

@@ -4,9 +4,12 @@ boxplot_pheno <- function(alpha,
                           param, 
                           delta,
                           color,
+                          delta.threshold = 0.85,
                           xlabel = '\u03B1', 
                           ylabel = 'Mean value',
                           ylimit = c(0, 1),
+                          legend.position = c(0.2, 0.8),
+                          legend.size = 1.2,
                           jitter.level = 1, 
                           point.size = 1) {
   
@@ -17,8 +20,8 @@ boxplot_pheno <- function(alpha,
   # creates plot structure and layout
   deltas <- sort(unique(delta))
   
-  if (0.6 %in% deltas | "0.6" %in% deltas) {
-    n_delta <- length(deltas) - 1 
+  if (any(as.numeric(levels(deltas)) >= delta.threshold)) {
+    n_delta <- length(deltas) - sum(as.numeric(levels(deltas)) >= delta.threshold)
   } else {
     n_delta <- length(deltas)
   }
@@ -29,14 +32,14 @@ boxplot_pheno <- function(alpha,
       cex.axis = 1.3,
       cex.main = 2,
       mar = c(2, 2, 2, 2),
-      oma = c(4, 4, 1, 0),
+      oma = c(4, 4, 6, 0),
       mgp = c(3.5, 1, 0))
   
   # creates plots
   first <- TRUE
   for (d in deltas) {
     
-    if (d == "0.6" | d > 0.5 ) next
+    if (d == as.character(delta.threshold) | d > delta.threshold ) next
     
     selection <- delta == d
     a <- alpha[selection]
@@ -57,7 +60,7 @@ boxplot_pheno <- function(alpha,
            main = paste('\u03B4 =', d),
            ylim = ylimit)
       axis(2, pos = 0.5)
-      legend(1, 0.8, legend = c('b', 'a'), pch = 16, col = color)
+      legend(legend.position, legend = c('b', 'a'), pch = 16, col = color, cex = legend.size)
     } else {
       plot(x, y,
            col = color[p],
@@ -104,7 +107,9 @@ sample_through_time <- function(gen,
                                 alpha,
                                 color = c('blue', 'red'),
                                 xlabel = expression("Generation [x" * 10^3 * "]"),
-                                ylabel = 'Value') {
+                                ylabel = 'Value',
+                                ylimit = NULL,
+                                legend.position = "bottomleft") {
   
   param <- as.factor(param)
   
@@ -115,19 +120,36 @@ sample_through_time <- function(gen,
       cex.lab = 1.5,
       cex.main = 2,
       mar = c(5, 5, 2, 2))
-  
+  first <- TRUE
   for (a in unique(alpha)) {
     sel_alpha <- alpha == a
     g <- gen[sel_alpha]
     # creates scatter plot
-    plot(g/1000, 
-         value[sel_alpha], 
-         col = color[param[sel_alpha]],
-         xlab = xlabel,
-         ylab = ylabel,
-         main = paste0("\u03B1 = ", a))
-    # adds legend
-    legend(0.5, max(value[sel_alpha]), legend = levels(param), col = color, pch = 16, cex = 1)
+    if (is.null(ylimit)) {
+      plot(g/1000, 
+           value[sel_alpha], 
+           col = color[param[sel_alpha]],
+           xlab = xlabel,
+           ylab = ylabel,
+           main = paste0("\u03B1 = ", a))
+    } else {
+      plot(g/1000, 
+           value[sel_alpha], 
+           col = color[param[sel_alpha]],
+           xlab = xlabel,
+           ylab = ylabel,
+           main = paste0("\u03B1 = ", a),
+           ylim = ylimit)
+    }
+    # add abline 
+    abline(h = 0.5, lty = 2, col = color[1])
+    abline(h = 0, lty = 2, col = color[2])
+    if (first) {
+      # adds legend
+      #legend(0.5, max(value[sel_alpha]), legend = levels(param), col = color, pch = 16, cex = 1)
+      legend(legend.position, legend = levels(param), col = color, pch = 16, cex = 1)
+      first <- FALSE
+    }
   }
 }
 
@@ -138,6 +160,7 @@ mean_through_time <- function(gen,
                               delta,
                               migration = NULL,
                               sim,
+                              delta.threshold = 0.85,
                               color = c('orange', 'darkblue'),
                               xlabel = 'Generation',
                               ylabel = 'Mean value',
@@ -159,7 +182,7 @@ mean_through_time <- function(gen,
       for (d in del) {
         
         # plotting the evolution of the mean is useless when delta > 0.5 due to branching
-        if (d > 0.5 | d == "0.6") next
+        if (d > delta.threshold | d == as.character(delta.threshold)) next
         
         if (migration_is_null) {
           seeds <- unique(sim[alpha == a & delta == d])
