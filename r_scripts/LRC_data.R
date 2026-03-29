@@ -1,5 +1,5 @@
-###############################################
-### data handling for LRC model simulations ###
+#################################################
+### data processing for LRC model simulations ###
 
 setwd("~/GitHub/selfing_sex_allocation/")
 source("r_scripts/functions/functions_data.R")

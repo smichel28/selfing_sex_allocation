@@ -1,5 +1,5 @@
-##################################################
-### visualization for simple model simulations ###
+#########################################
+### visualization for LRC simulations ###
 
 library(dplyr)
 library(tidyr)
