@@ -82,31 +82,121 @@ for (m in unique(ess$migration)) {
 #.....................
 # sampling random individuals through time
 
-sampled_ind_0.01 <- read.table("data/LRC/summary_data/LRC_mig_0.01_sampled_ind.tsv", 
+sampled_ind_0.05 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.05_sampled_ind.tsv", 
                                header = TRUE)
-sampled_ind_0.05 <- read.table("data/LRC/summary_data/LRC_mig_0.05_sampled_ind.tsv", 
+sampled_ind_0.15 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.15_sampled_ind.tsv", 
                                header = TRUE)
-sampled_ind_0.1 <- read.table("data/LRC/summary_data/LRC_mig_0.1_sampled_ind.tsv", 
+sampled_ind_0.25 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.25_sampled_ind.tsv", 
                               header = TRUE)
-sampled_ind_0.5 <- read.table("data/LRC/summary_data/LRC_mig_0.5_sampled_ind.tsv", 
-                              header = TRUE)
-sampled_ind_0.9 <- read.table("data/LRC/summary_data/LRC_mig_0.9_sampled_ind.tsv", 
-                              header = TRUE)
-sampled_ind_0.95 <- read.table("data/LRC/summary_data/LRC_mig_0.95_sampled_ind.tsv", 
+sampled_ind_0.35 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.35_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.45 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.45_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.55 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.55_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.65 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.65_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.75 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.75_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.85 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.85_sampled_ind.tsv", 
+                               header = TRUE)
+sampled_ind_0.95 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.95_sampled_ind.tsv", 
                                header = TRUE)
 
-sampled_ind <- rbind(sampled_ind_0.01, 
-                     sampled_ind_0.05, 
-                     sampled_ind_0.1, 
-                     sampled_ind_0.5,
-                     sampled_ind_0.9, 
+sampled_ind <- rbind(sampled_ind_0.05, 
+                     sampled_ind_0.15, 
+                     sampled_ind_0.25,
+                     sampled_ind_0.35,
+                     sampled_ind_0.45,
+                     sampled_ind_0.55,
+                     sampled_ind_0.65,
+                     sampled_ind_0.75,
+                     sampled_ind_0.85,
                      sampled_ind_0.95)
 
-for (m in c(0.01, 0.05, 0.1, 0.5, 0.9, 0.95)) {
+deltas <- unique(sampled_ind$delta)
+alphas <- unique(sampled_ind$alpha)
+migs <- unique(sampled_ind$mig)
+
+rep <- unique(sampled_ind$seed[sampled_ind$alpha==0.05 &
+                                 sampled_ind$delta==0.6 & 
+                                 sampled_ind$mig==0.85])
+
+par(mfrow=c(1,3))
+for (r in rep) {
   
-  for (d in c(0.6, 0.85)) {
-    
-    par(mfrow = c(2, 2), oma = c(0, 0, 4, 0))
+  d <- sampled_ind[sampled_ind$seed==r,]
+  
+  with(
+    data = d,
+    sample_through_time(gen = generation,
+                        value = Param_value,
+                        param = param,
+                        alpha = alpha,
+                        color = c("orange", "darkblue"),
+                        ylimit = c(-1, 1.2))
+  )
+  
+  print( min(d$Param_value[d$param=="intercept"]))
+  
+}
+
+min.val <- c()
+max.val <- c()
+for (r in rep) {
+  val <- sampled_ind$Param_value[sampled_ind$param=="intercept" &
+                                   sampled_ind$alpha==0.05 &
+                                   sampled_ind$delta==0.6 & 
+                                   sampled_ind$mig==0.85 &
+                                   sampled_ind$generation>80000 &
+                                   sampled_ind$seed==r]
+  
+  min.val <- c(min.val, min(val))
+  max.val <- c(max.val, max(val))
+}
+max.diff <- mean(max.val-min.val)
+
+
+is.branching.list <- list()
+for (d in deltas) {
+  
+  is.branching <- matrix(FALSE, nrow = length(migs), ncol = length(alphas))
+  colnames(is.branching) <- alphas
+  rownames(is.branching) <- migs
+  
+  for (a in alphas) {
+    for (m in migs) {
+      rep <- unique(sampled_ind$seed[sampled_ind$alpha==a &
+                                       sampled_ind$delta==d & 
+                                       sampled_ind$mig==m])
+      min.val <- c()
+      max.val <- c()
+      for (r in rep) {
+        val <- sampled_ind$Param_value[sampled_ind$param=="intercept" &
+                                            sampled_ind$alpha==a &
+                                            sampled_ind$delta==d & 
+                                            sampled_ind$mig==m &
+                                            sampled_ind$generation>80000 &
+                                            sampled_ind$seed==r]
+        min.val <- c(min.val, min(val))
+        max.val <- c(max.val, max(val))
+        if (mean(max.val-min.val) > (max.diff+0.1))
+          is.branching[as.character(m),as.character(a)] <- TRUE
+      }
+    }
+  }
+  
+  is.branching.list[[as.character(d)]] <- is.branching
+  
+}
+
+for (m in migs) {
+  
+  png(paste0("~/GitHub/selfing_sex_allocation/figures/sampled_ind_mig_", m, ".png"), width = 3000, height = 3000, res = 200)
+  
+  par(mfrow = c(4, 5), oma = c(0, 4, 4, 0))
+  
+  for (d in deltas[deltas>0.5]) {
     
     sampled_ind_high_delta <- sampled_ind %>%
       filter(delta == d & mig == m)
@@ -132,9 +222,15 @@ for (m in c(0.01, 0.05, 0.1, 0.5, 0.9, 0.95)) {
                           ylimit = c(-1, 1.2))
     )
     
-    mtext(paste0("m = ", m, ", delta = ", d), outer = TRUE, cex = 1.5, font = 2)
+    pos <- 0.25
+    if (d == 0.6) pos <- 0.75
+    
+    mtext(paste0("delta = ", d), outer = TRUE, cex = 1.5, font = 2, side = 2, at = pos)
     
   }
+  
+  mtext(paste0("m = ", m), outer = TRUE, cex = 1.5, font = 2)
+  dev.off()
 }
 
 #.....................
@@ -190,38 +286,51 @@ for (d in deltas) {
     }
   }
   
+  means[is.branching.list[[as.character(d)]]] <- NA
+  vars[is.branching.list[[as.character(d)]]] <- NA
+  slopes[is.branching.list[[as.character(d)]]] <- NA
+  intercepts[is.branching.list[[as.character(d)]]] <- NA
+  
   p.means <- pheatmap::pheatmap(means, 
                                 main = "mean",
                                 color = colors.means, 
                                 breaks = breaks.means,
                                 cluster_cols = F, cluster_rows = F,
-                                na_col = "grey40")
+                                na_col = "grey80",
+                                fontsize = 8)
   p.vars <- pheatmap::pheatmap(vars, 
                                main = "variance",
                                color = colors.vars,
                                cluster_cols = F, cluster_rows = F,
-                               na_col = "grey40")
+                               na_col = "grey80",
+                               fontsize = 8)
   p.slopes <- pheatmap::pheatmap(slopes, 
                                  main = "slope",
                                  color = colors.slopes,
                                  breaks = breaks.slopes,
                                  cluster_cols = F, cluster_rows = F,
-                                 na_col = "grey40")
+                                 na_col = "grey80",
+                                 fontsize = 8)
   p.intercepts <- pheatmap::pheatmap(intercepts, 
                                      main = "intercept",
                                      color = colors.intercepts,
                                      breaks = breaks.intercepts,
                                      cluster_cols = F, cluster_rows = F,
-                                     na_col = "grey40")
+                                     na_col = "grey80",
+                                     fontsize = 8)
   
+  png(paste0("~/GitHub/selfing_sex_allocation/figures/heatmap_delta_", d, ".png"), width = 1700, height = 1500, res = 200)
   gridExtra::grid.arrange(
     p.means$gtable,
     p.vars$gtable,
     p.slopes$gtable,
     p.intercepts$gtable,
     ncol = 2,
-    top = paste0("delta = ", d)
+    top = grid::textGrob(paste0("\u03B4 = ", d), gp = grid::gpar(fontsize = 14, fontface = "bold")),
+    left = grid::textGrob("m", rot = 90, gp = grid::gpar(fontsize = 14, fontface = "bold")),
+    bottom = grid::textGrob("\u03B1", gp = grid::gpar(fontsize = 14, fontface = "bold"))
   )
+  dev.off()
   
 }
 
