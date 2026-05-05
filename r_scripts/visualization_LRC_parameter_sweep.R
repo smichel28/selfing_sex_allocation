@@ -297,14 +297,14 @@ for (d in deltas) {
                                 color = colors.means, 
                                 breaks = breaks.means,
                                 cluster_cols = F, cluster_rows = F,
-                                na_col = "grey80",
+                                na_col = "grey30",
                                 border_color = NA,
                                 fontsize = 8)
   p.vars <- pheatmap::pheatmap(vars, 
                                main = "variance",
                                color = colors.vars,
                                cluster_cols = F, cluster_rows = F,
-                               na_col = "grey80",
+                               na_col = "grey30",
                                border_color = NA,
                                fontsize = 8)
   p.slopes <- pheatmap::pheatmap(slopes, 
@@ -312,7 +312,7 @@ for (d in deltas) {
                                  color = colors.slopes,
                                  breaks = breaks.slopes,
                                  cluster_cols = F, cluster_rows = F,
-                                 na_col = "grey80",
+                                 na_col = "grey30",
                                  border_color = NA,
                                  fontsize = 8)
   p.intercepts <- pheatmap::pheatmap(intercepts, 
@@ -320,7 +320,7 @@ for (d in deltas) {
                                      color = colors.intercepts,
                                      breaks = breaks.intercepts,
                                      cluster_cols = F, cluster_rows = F,
-                                     na_col = "grey80",
+                                     na_col = "grey30",
                                      border_color = NA,
                                      fontsize = 8)
   
