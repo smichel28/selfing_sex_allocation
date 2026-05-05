@@ -190,49 +190,50 @@ for (d in deltas) {
   
 }
 
-for (m in migs) {
-  
-  png(paste0("~/GitHub/selfing_sex_allocation/figures/sampled_ind_mig_", m, ".png"), width = 3000, height = 3000, res = 200)
-  
-  par(mfrow = c(4, 5), oma = c(0, 4, 4, 0))
-  
-  for (d in deltas[deltas>0.5]) {
+for (replicat in 1:3) {
+  for (m in migs) {
     
-    sampled_ind_high_delta <- sampled_ind %>%
-      filter(delta == d & mig == m)
+    png(paste0("~/GitHub/selfing_sex_allocation/figures/sampled_ind_mig_", m, "_rep_", replicat,".png"), width = 3000, height = 3000, res = 200)
     
-    sel_seeds <- c()
-    for (a in unique(sampled_ind_high_delta$alpha)) {
-      seeds <- unique(sampled_ind_high_delta$seed[sampled_ind_high_delta$alpha == a])
-      sel_seeds <- c(sel_seeds, seeds[1])
+    par(mfrow = c(4, 5), oma = c(0, 4, 4, 0))
+    
+    for (d in deltas[deltas>0.5]) {
+      
+      sampled_ind_high_delta <- sampled_ind %>%
+        filter(delta == d & mig == m)
+      
+      sel_seeds <- c()
+      for (a in unique(sampled_ind_high_delta$alpha)) {
+        seeds <- unique(sampled_ind_high_delta$seed[sampled_ind_high_delta$alpha == a])
+        sel_seeds <- c(sel_seeds, seeds[replicat])
+      }
+      
+      sampled_ind_high_delta <- sampled_ind_high_delta %>%
+        filter(seed %in% sel_seeds)
+      
+      if (m == 0.5) yl<- c(-1,1.2)
+      
+      with(
+        data = sampled_ind_high_delta,
+        sample_through_time(gen = generation,
+                            value = Param_value,
+                            param = param,
+                            alpha = alpha,
+                            color = c("orange", "darkblue"),
+                            ylimit = c(-1, 1.2))
+      )
+      
+      pos <- 0.25
+      if (d == 0.6) pos <- 0.75
+      
+      mtext(paste0("delta = ", d), outer = TRUE, cex = 1.5, font = 2, side = 2, at = pos)
+      
     }
     
-    sampled_ind_high_delta <- sampled_ind_high_delta %>%
-      filter(seed %in% sel_seeds)
-    
-    if (m == 0.5) yl<- c(-1,1.2)
-    
-    with(
-      data = sampled_ind_high_delta,
-      sample_through_time(gen = generation,
-                          value = Param_value,
-                          param = param,
-                          alpha = alpha,
-                          color = c("orange", "darkblue"),
-                          ylimit = c(-1, 1.2))
-    )
-    
-    pos <- 0.25
-    if (d == 0.6) pos <- 0.75
-    
-    mtext(paste0("delta = ", d), outer = TRUE, cex = 1.5, font = 2, side = 2, at = pos)
-    
+    mtext(paste0("m = ", m), outer = TRUE, cex = 1.5, font = 2)
+    dev.off()
   }
-  
-  mtext(paste0("m = ", m), outer = TRUE, cex = 1.5, font = 2)
-  dev.off()
 }
-
 #.....................
 # heatmaps
 
@@ -297,12 +298,14 @@ for (d in deltas) {
                                 breaks = breaks.means,
                                 cluster_cols = F, cluster_rows = F,
                                 na_col = "grey80",
+                                border_color = NA,
                                 fontsize = 8)
   p.vars <- pheatmap::pheatmap(vars, 
                                main = "variance",
                                color = colors.vars,
                                cluster_cols = F, cluster_rows = F,
                                na_col = "grey80",
+                               border_color = NA,
                                fontsize = 8)
   p.slopes <- pheatmap::pheatmap(slopes, 
                                  main = "slope",
@@ -310,6 +313,7 @@ for (d in deltas) {
                                  breaks = breaks.slopes,
                                  cluster_cols = F, cluster_rows = F,
                                  na_col = "grey80",
+                                 border_color = NA,
                                  fontsize = 8)
   p.intercepts <- pheatmap::pheatmap(intercepts, 
                                      main = "intercept",
@@ -317,6 +321,7 @@ for (d in deltas) {
                                      breaks = breaks.intercepts,
                                      cluster_cols = F, cluster_rows = F,
                                      na_col = "grey80",
+                                     border_color = NA,
                                      fontsize = 8)
   
   png(paste0("~/GitHub/selfing_sex_allocation/figures/heatmap_delta_", d, ".png"), width = 1700, height = 1500, res = 200)
