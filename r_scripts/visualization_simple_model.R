@@ -15,7 +15,7 @@ source("r_scripts/functions/functions_plot.R")
 mean_data <- read.table("data/simple_model/summary_data/simple_model_means_ind.tsv", 
                         header = TRUE)
 
-par(mfrow = c(3,1))
+par(mfrow = c(4,1))
 with(
   data = mean_data,
   mean_through_time(gen = generation,
@@ -25,6 +25,21 @@ with(
                     delta = delta,
                     sim = seed)
   )
+
+
+ess <- calculate_ess(mean_data, model = "simple")
+
+with(data = ess,
+     boxplot_pheno(alpha, 
+                   mean, 
+                   param, 
+                   delta, 
+                   delta.threshold = 0.6,
+                   color = c("orange", "darkblue"), 
+                   ylimit = c(-0.2, 1),
+                   legend.position = "topleft",
+                   legend.size = 1.6))
+
 
 #.....................
 # sampling random individuals through time
