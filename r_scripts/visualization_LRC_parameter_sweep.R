@@ -249,8 +249,8 @@ migs <- unique(ess$migration)
 
 colors.means <- colorRampPalette(c("darkblue", "beige", "orange2"))(100)
 colors.vars <- colorRampPalette(c("white", "darkolivegreen2", "darkgreen"))(100)
-colors.slopes <- colorRampPalette(c("cornflowerblue", "white", "indianred2"))(100)
-colors.intercepts <- colorRampPalette(c("white", "indianred2"))(100)
+colors.slopes <- colorRampPalette(c("darkblue", "cornflowerblue", "white", "orange", "indianred2"))(100)
+colors.intercepts <- colorRampPalette(c("white", "orange", "indianred2"))(100)
 
 breaks.means <- seq(0, 1, length.out = 101)
 breaks.slopes <- seq(-max(abs(ess$mean[ess$param=="slope"])), 
@@ -259,6 +259,9 @@ breaks.slopes <- seq(-max(abs(ess$mean[ess$param=="slope"])),
 breaks.intercepts <- seq(min(ess$mean[ess$param=="intercept"]),
                          max(ess$mean[ess$param=="intercept"]),
                          length.out = 101)
+
+heatmaps <- list()
+
 for (d in deltas) {
   
   means <- matrix(NA, nrow = length(migs), ncol = length(alphas))
@@ -324,6 +327,11 @@ for (d in deltas) {
                                      border_color = NA,
                                      fontsize = 8)
   
+  heatmaps[[as.character(d)]] <- list("means" = means,
+                                      "vars" = vars,
+                                      "slopes" = slopes,
+                                      "intercepts" = intercepts)
+  
   png(paste0("~/GitHub/selfing_sex_allocation/figures/heatmap_delta_", d, ".png"), width = 1700, height = 1500, res = 200)
   gridExtra::grid.arrange(
     p.means$gtable,
@@ -339,3 +347,48 @@ for (d in deltas) {
   
 }
 
+
+longs <- list()
+for (d in names(heatmaps)) {
+  for (mat in names(heatmaps[[d]])) {
+    
+    long <- as.data.frame(as.table(heatmaps[[d]][[mat]])) %>% 
+      mutate(delta = d, param = mat)
+    
+    longs[[paste0(d,"_",mat)]] <- long
+    
+  }
+}
+
+final_long <- bind_rows(longs) 
+colnames(final_long) <- c("m", "alpha", "ess", "delta", "param")
+final_long <- final_long %>% mutate(delta = paste0("\u03B4 = ", delta))
+
+means <- ggplot(data = final_long %>% filter(param == "means"), aes(x = alpha, y = m, fill = ess)) + 
+  geom_tile() +
+  scale_fill_gradient2(low = "darkblue", mid = "beige", high = "orange2", midpoint = 0.5) +
+  facet_grid(delta ~ .) +
+  labs(x = "\u03B1", y = "m", fill = "Mean SA") +
+  theme_test() +
+  theme(legend.position = "top")
+means
+intercepts <- ggplot(data = final_long %>% filter(param == "intercepts"), aes(x = alpha, y = m, fill = ess)) + 
+  geom_tile() +
+  scale_fill_gradient2(low = "cornflowerblue", mid = "white", high = "indianred2", midpoint = 0.5) +
+  facet_grid(delta ~ .) +
+  labs(x = "\u03B1", y = "m", fill = "\u2113") +
+  theme_test() +
+  theme(legend.position = "top")
+intercepts
+slopes <- ggplot(data = final_long %>% filter(param == "slopes"), aes(x = alpha, y = m, fill = ess)) + 
+  geom_tile() +
+  scale_fill_gradient2(low = "cornflowerblue", mid = "white", high = "indianred2", limits = c(-1.2, 1.2)) +
+  facet_grid(delta ~ .) +
+  labs(x = "\u03B1", y = "m", fill = expression(italic(k))) +
+  theme_test() +
+  theme(legend.position = "top")
+slopes
+
+png("~/GitHub/selfing_sex_allocation/figures/heatmaps.png", width = 2200, height = 1500, res = 200)
+(means | slopes | intercepts)
+dev.off()
