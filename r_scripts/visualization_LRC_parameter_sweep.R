@@ -3,6 +3,8 @@
 
 library(dplyr)
 library(tidyr)
+library(ggplot2)
+library(patchwork)
 
 setwd("~/GitHub/selfing_sex_allocation/")
 source("r_scripts/functions/functions_plot.R")
@@ -77,6 +79,60 @@ for (m in unique(ess$migration)) {
                      legend.size = 1.6))
   mtext(paste0("m = ", m), outer = TRUE, cex = 1.5, font = 2, line = 1.2)
 }
+
+for (a in unique(ess$alpha)) {
+  df <- ess[ess$alpha==a,]
+  with(data = df,
+       boxplot_pheno(migration, 
+                     mean, 
+                     param, 
+                     delta, 
+                     delta.threshold = 0.6,
+                     color = c("orange", "darkblue"), 
+                     ylimit = c(-0.75, 1),
+                     legend.position = "topleft",
+                     legend.size = 1.6))
+  mtext(paste0("alpha = ", a), outer = TRUE, cex = 1.5, font = 2, line = 1.2)
+}
+
+ggplot(data = ess %>% filter(delta == 0) %>% mutate(alpha = paste("\u03B1 =", alpha))) +
+  geom_point(aes(x = factor(migration), y = mean, color = param)) +
+  facet_wrap(~factor(alpha), ncol = 5) + 
+  geom_abline(slope = 0, intercept = 0.5, linetype = "dashed", color = "indianred1") +
+  geom_abline(slope = 0, intercept = 0.0, linetype = "dashed", color = "skyblue3") +
+  labs(x = "m (dispersal rate)", y = "ESS") +
+  theme_light()  +
+  theme(legend.position = "top",
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7))
+
+ggplot(data = ess %>% filter(delta == 0)) +
+  geom_point(aes(x = factor(alpha), y = mean, color = param)) +
+  facet_wrap(~factor(migration), ncol = 5) + 
+  geom_abline(slope = 0, intercept = 0.5, linetype = "dashed", color = "indianred1") +
+  geom_abline(slope = 0, intercept = 0.0, linetype = "dashed", color = "skyblue3") +
+  theme_light()
+
+df.reaction.norm <- ess %>% 
+  filter(delta == 0.4 & alpha ==0.05) %>%
+  group_by(migration, param) %>%
+  summarise(mean_value = mean(mean)) %>%
+  pivot_wider(names_from = param, values_from = mean_value) %>%
+  crossing(R =seq(0,1,0.1)) %>% 
+  mutate(z = R*slope+intercept)
+  
+
+ggplot(data = df.reaction.norm) +
+  geom_line(aes(x=R,y=z, color = factor(migration))) +
+  geom_abline(slope = 0, intercept = 0.5, linetype = "dashed", color = "grey") +
+  scale_color_brewer(palette = "RdYlGn") +
+  labs(x="Resource budget", 
+       y = "Z (sex allocation)", 
+       color = "m", 
+       title = "delta = 0.4, alpha = 0.05") +
+  scale_y_continuous(limits = c(0,1)) +
+  theme_light()
+  
 
 
 #.....................
@@ -234,6 +290,15 @@ for (replicat in 1:3) {
     dev.off()
   }
 }
+
+ggplot(data = sampled_ind %>% filter(delta == 0.8 & alpha == 0.55 & mig == 0.45)) +
+  geom_point(aes(x = generation, y = Param_value, color = param)) +
+  geom_abline(slope = 0, intercept = 0.5, linetype = "dashed", color = "indianred1") +
+  geom_abline(slope = 0, intercept = 0.0, linetype = "dashed", color = "skyblue3") +
+  facet_grid(factor(seed) ~ .) +
+  labs(title = "delta = 0.8, alpha = 0.55, m = 0.45", y = "Value") +
+  theme_light()
+
 #.....................
 # heatmaps
 
@@ -362,31 +427,42 @@ for (d in names(heatmaps)) {
 
 final_long <- bind_rows(longs) 
 colnames(final_long) <- c("m", "alpha", "ess", "delta", "param")
-final_long <- final_long %>% mutate(delta = paste0("\u03B4 = ", delta))
+final_long <- final_long %>% 
+  mutate(delta = paste0("\u03B4 = ", delta)) %>%
+  mutate(label = ifelse(is.na(ess), "XY", ""))
 
 means <- ggplot(data = final_long %>% filter(param == "means"), aes(x = alpha, y = m, fill = ess)) + 
   geom_tile() +
-  scale_fill_gradient2(low = "darkblue", mid = "beige", high = "orange2", midpoint = 0.5) +
+  #geom_text(aes(label = label), size = 2)+
+  scale_fill_gradient2(low = "darkblue", mid = "white", high = "orange2", midpoint = 0.5) +
   facet_grid(delta ~ .) +
   labs(x = "\u03B1", y = "m", fill = "Mean SA") +
   theme_test() +
-  theme(legend.position = "top")
+  theme(legend.position = "top",
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6))
 means
 intercepts <- ggplot(data = final_long %>% filter(param == "intercepts"), aes(x = alpha, y = m, fill = ess)) + 
   geom_tile() +
-  scale_fill_gradient2(low = "cornflowerblue", mid = "white", high = "indianred2", midpoint = 0.5) +
+  scale_fill_distiller(palette = "YlGnBu", direction = 1) +
+  #scale_fill_gradient2(low = "chartreuse4", mid = "gold2", high = "darkmagenta", midpoint = 0.5) +
   facet_grid(delta ~ .) +
-  labs(x = "\u03B1", y = "m", fill = "\u2113") +
+  #labs(x = "\u03B1", y = "m", fill = "\u2113") +
+  labs(x = "\u03B1", y = "m", fill = "intercept") +
   theme_test() +
-  theme(legend.position = "top")
+  theme(legend.position = "top",
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6))
 intercepts
 slopes <- ggplot(data = final_long %>% filter(param == "slopes"), aes(x = alpha, y = m, fill = ess)) + 
   geom_tile() +
-  scale_fill_gradient2(low = "cornflowerblue", mid = "white", high = "indianred2", limits = c(-1.2, 1.2)) +
+  scale_fill_gradient2(low = "cornflowerblue", mid = "white", high = "firebrick1", midpoint = 0) +
   facet_grid(delta ~ .) +
-  labs(x = "\u03B1", y = "m", fill = expression(italic(k))) +
+  labs(x = "\u03B1", y = "m", fill = "slope") +
   theme_test() +
-  theme(legend.position = "top")
+  theme(legend.position = "top",
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6))
 slopes
 
 png("~/GitHub/selfing_sex_allocation/figures/heatmaps.png", width = 2200, height = 1500, res = 200)
