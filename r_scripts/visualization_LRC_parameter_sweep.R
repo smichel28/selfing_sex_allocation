@@ -468,3 +468,68 @@ slopes
 png("~/GitHub/selfing_sex_allocation/figures/heatmaps.png", width = 2200, height = 1500, res = 200)
 (means | slopes | intercepts)
 dev.off()
+
+## vs. expected
+
+expected_sex_alloc <- function(alpha, delta, m) {
+  return((m*(2-m)*(1-alpha*delta))/(1-alpha+m*(2-m)*(1-alpha*delta*(2-alpha))))
+}
+
+Delta<-c(0,0.4)
+Alpha<-seq(0.05,0.95,0.1)
+M<-seq(0.05,0.95,0.1)
+
+exp_ess <- expand.grid(delta = Delta, alpha=Alpha, migration = M)
+
+exp_ess <- exp_ess %>% 
+  mutate(exp = expected_sex_alloc(alpha = alpha, delta = delta,m = migration))
+
+obs_ess <- ess %>% 
+  filter(delta < 0.5) %>%
+  pivot_wider(names_from = param, values_from = mean) %>% 
+  mutate(obs = intercept+0.5*slope)
+
+compare_obs_exp <- left_join(obs_ess, exp_ess,
+                             by = c("delta", "alpha", "migration"))
+
+compare_0 <- ggplot() +
+  geom_line(data = exp_ess %>% filter(delta == 0), aes(x = migration, y = exp, color = factor(alpha))) +
+  geom_point(data = obs_ess %>% filter(delta == 0), aes(x = migration, y = obs, color = factor(alpha)), shape = 1, size = 2.5) +
+  scale_color_brewer(palette = "Paired") + 
+  labs(x = "m", y = "Mean SA", color = "\u03B1", title = "delta = 0") +
+  theme_light() +
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 13),
+        legend.text = element_text(size = 13),
+        legend.title = element_text(size = 13),
+        legend.position = c(0.9, 0.22),
+        strip.text = element_text(size = 14),
+        title = element_text(size = 16),
+        legend.background = element_rect(color = "black", fill = "white", linewidth = 0.5),
+        panel.border = element_rect(
+          color = "black",
+          fill = NA,
+          linewidth = 1
+        ))
+
+compare_0.4 <- ggplot() +
+  geom_line(data = exp_ess %>% filter(delta == 0.4), aes(x = migration, y = exp, color = factor(alpha))) +
+  geom_point(data = obs_ess %>% filter(delta == 0.4), aes(x = migration, y = obs, color = factor(alpha)), shape = 1, size = 2.5) +
+  scale_color_brewer(palette = "Paired") + 
+  labs(x = "m", y = "Mean SA", color = "\u03B1", title = "delta = 0.4") +
+  theme_light() +
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 13),
+        legend.text = element_text(size = 13),
+        legend.title = element_text(size = 13),
+        legend.position = c(0.9, 0.22),
+        strip.text = element_text(size = 14),
+        title = element_text(size = 16),
+        legend.background = element_rect(color = "black", fill = "white", linewidth = 0.5),
+        panel.border = element_rect(
+          color = "black",
+          fill = NA,
+          linewidth = 1
+        ))
+
+compare_0 | compare_0.4
