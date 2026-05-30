@@ -265,7 +265,7 @@ reproduction() {
 		d_hapl = hapl_sampled.sumOfMutationsOfType(3);
 		
 		line_slope = paste(c(gen, "slope", a_inds_sampled, a_hapl), sep="\t");
-		line_intercept = paste(c(gen, "intercept", b_ind_sampled, b_hapl), sep="\t");
+		line_intercept = paste(c(gen, "intercept", b_inds_sampled, b_hapl), sep="\t");
 		line_dominance = paste(c(gen, "dominance", domtot_inds_sampled, d_hapl), sep="\t");
 		
 		writeFile(FILE_NAME, line_slope, append=T);
