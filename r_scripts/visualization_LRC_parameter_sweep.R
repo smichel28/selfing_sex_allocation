@@ -487,7 +487,7 @@ exp_ess <- exp_ess %>%
 obs_ess <- ess %>% 
   filter(delta < 0.5) %>%
   pivot_wider(names_from = param, values_from = mean) %>% 
-  mutate(obs = intercept+0.5*slope)
+  mutate(obs = intercept+(2/3)*slope)
 
 compare_obs_exp <- left_join(obs_ess, exp_ess,
                              by = c("delta", "alpha", "migration"))

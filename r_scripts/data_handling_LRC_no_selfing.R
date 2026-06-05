@@ -12,7 +12,7 @@ file_names <- get_file_names(read_wd)
 extract_and_saves(files = file_names,
                   nind = 20,
                   nhapl = 20,
-                  save.name = "LRC_dominance",
+                  save.name = "LRC_no_selfing",
                   read.wd = read_wd,
                   write.wd = "data/LRC_no_selfing/processed_data",
                   every.gen = 5000)
