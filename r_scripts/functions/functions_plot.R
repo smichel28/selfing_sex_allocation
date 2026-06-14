@@ -300,16 +300,62 @@ calculate_ess <- function(df,
   
 }
 
-## To test ##
-# 
-# library(dplyr)
-# library(tidyr)
-# 
-# data <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
-#   filter(seed == 7197913992516104192)
-# 
-# sample_through_time(data$generation, data$Param_value, param = factor(data$param), delta = data$delta)
-# 
-# data1 <- read.table("/home/samuel/Desktop/data/test_6_data_sampled_hapl.tsv", header = TRUE) %>%
-#   filter(seed == 7197913992516104192) %>%
-#   pivot_wider(names_from = param, values_from = Param_value)
+
+
+cluster.individuals <- function(intercepts,
+                                slopes,
+                                dominance = NULL,
+                                starting.values,
+                                n.iter = 30) {
+  
+  if (is.null(dominance)) {
+    dat <- cbind(intercepts, slopes)
+    colnames(dat) <- c("intercept", "slope")
+  } else {
+    dat <- cbind(intercepts, slopes, dominance)
+    colnames(dat) <- c("intercept", "slope", "dominance")
+  }
+  
+  k <- kmeans(x = dat, centers = starting.values, iter.max = n.iter)
+  clusters <- matrix(k$cluster, ncol = 1)
+  colnames(clusters) <- "cluster"
+  
+  return(as.data.frame(cbind(dat, clusters)))
+  
+}
+
+calculate.group.sex.alloc <- function(dat) {
+  
+  groups <- dat$cluster
+  ess_inter <- c()
+  ess_slope <- c()
+  
+  #print(cbind(groups == 1, groups == 2))
+  
+  for(g in unique(groups)) 
+  {
+    ess_inter <- c(ess_inter, mean(dat$intercept[groups == g]))
+    ess_slope <- c(ess_slope, mean(dat$slope[groups == g]))
+  }
+  
+  return(data.frame(slope = ess_slope, 
+                  intercept = ess_inter, 
+                  group = unique(groups)))
+
+}
+
+identify.gynodioecy <- function(ESS) {
+  
+  X <- max(ESS["intercept"])
+  Y <- min(ESS["intercept"])
+  
+  XY <- (X+Y)/2
+  
+  if (XY > 0.1) return(T)
+  else return(F)
+  
+}
+
+
+
+

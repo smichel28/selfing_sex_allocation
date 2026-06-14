@@ -246,6 +246,84 @@ for (d in deltas) {
   
 }
 
+
+
+sampled_hapl_0.05 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.05_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.15 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.15_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.25 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.25_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.35 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.35_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.45 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.45_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.55 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.55_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.65 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.65_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.75 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.75_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.85 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.85_sampled_hapl.tsv", 
+                               header = TRUE)
+sampled_hapl_0.95 <- read.table("data/LRC_parameter_sweep/summary_data/LRC_mig_0.95_sampled_hapl.tsv", 
+                               header = TRUE)
+
+sampled_hapl <- rbind(sampled_hapl_0.05, 
+                     sampled_hapl_0.15, 
+                     sampled_hapl_0.25,
+                     sampled_hapl_0.35,
+                     sampled_hapl_0.45,
+                     sampled_hapl_0.55,
+                     sampled_hapl_0.65,
+                     sampled_hapl_0.75,
+                     sampled_hapl_0.85,
+                     sampled_hapl_0.95) %>%
+  pivot_wider(names_from = param, values_from = Param_value) %>%
+  filter(generation >= 70000)
+
+
+
+is.gynodioecy.list <- list()
+for (d in deltas[deltas>0.5]) {
+  
+  is.branching <- is.branching.list[[as.character(d)]]
+  
+  is.gynodioecy <- matrix(FALSE, nrow = length(migs), ncol = length(alphas))
+  colnames(is.gynodioecy) <- alphas
+  rownames(is.gynodioecy) <- migs
+  
+  #print(is.branching)
+  
+  for (a in alphas) {
+    for (m in migs) {
+      if (is.branching[as.character(m),as.character(a)]) {
+        
+        condition <- sampled_hapl$alpha==a &
+          sampled_hapl$delta==d & 
+          sampled_hapl$mig==m
+        
+        grouped <- cluster.individuals(intercepts = sampled_hapl$intercept[condition],
+                                       slopes = sampled_hapl$slope[condition],
+                                       starting.values = matrix(c(1,0,0,-0.5), 
+                                                                nrow = 2, 
+                                                                byrow = TRUE))
+        #print(grouped)
+        group.sex.alloc <- calculate.group.sex.alloc(grouped)
+        #print(paste("alpha =", a, "m =", m, "delta =", d))
+        #print(group.sex.alloc)
+        #print(identify.gynodioecy(group.sex.alloc))
+        is.gynodioecy[as.character(m),as.character(a)] <- identify.gynodioecy(group.sex.alloc)
+        
+        
+      }
+    }
+  }
+  
+  is.gynodioecy.list[[as.character(d)]] <- is.gynodioecy
+  
+}
+
 for (replicat in 1:3) {
   for (m in migs) {
     
@@ -428,12 +506,26 @@ for (d in names(heatmaps)) {
 final_long <- bind_rows(longs) 
 colnames(final_long) <- c("m", "alpha", "ess", "delta", "param")
 final_long <- final_long %>% 
-  mutate(delta = paste0("\u03B4 = ", delta)) %>%
-  mutate(label = ifelse(is.na(ess), "XY", ""))
+  mutate(label = ifelse(is.na(ess), "D", ""))
+
+for (d in names(is.gynodioecy.list)) {
+  is.gynodioecy <- is.gynodioecy.list[[d]]
+  for (m in rownames(is.gynodioecy)) {
+    for (a in colnames(is.gynodioecy)) {
+      if (is.gynodioecy[m,a]) {
+        final_long$label[final_long$m == m &
+                         final_long$alpha == a &
+                         final_long$delta == d] <- "GD"
+      }
+    }
+  }
+}
+
+final_long <- final_long %>% mutate(delta = paste0("\u03B4 = ", delta))
 
 means <- ggplot(data = final_long %>% filter(param == "means"), aes(x = alpha, y = m, fill = ess)) + 
   geom_tile() +
-  #geom_text(aes(label = label), size = 2)+
+  geom_text(aes(label = label), size = 2)+
   scale_fill_gradient2(low = "darkblue", mid = "white", high = "orange2", midpoint = 0.5) +
   facet_grid(delta ~ .) +
   labs(x = "\u03B1", y = "m", fill = "Mean SA") +

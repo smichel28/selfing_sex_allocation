@@ -95,7 +95,7 @@ dev.off()
 
 png("figures/figure5C.png", height = 2000, width = 2000, res = 300)
 par(cex.lab = 1.8, cex.axis = 1.5)
-par(mfrow = c(1,1), mar = c(5, 5, 4, 6) + 0.1, oma = c(0,0,0,0))
+par(mfrow = c(1,1), mar = c(5, 5, 1, 1) + 0.1, oma = c(0,0,0,0))
 
 df1 <- sampled_hapl_long %>%
   mutate(dominance = dominance/max(dominance)) %>%
@@ -120,3 +120,54 @@ legend("topright", legend = c(expression(italic("h") * ", intercept"),
        col = c("cornflowerblue", "orange2"), pch = c(1,5), bg = "white",
        pt.lwd = 2.5, bty = "n", cex = 1.5)
 dev.off()
+
+# ---- figure 5D ----
+
+
+alleles.clustered <- sampled_hapl_long %>%
+  filter(generation>200) %>%
+  mutate(dominance = dominance/max(dominance)) %>%
+  mutate(group = ifelse(dominance>0.5, 1, 2))
+
+avg.inter.X <- mean(alleles.clustered$intercept[alleles.clustered$group==2])
+avg.inter.Y <- mean(alleles.clustered$intercept[alleles.clustered$group==1])
+
+avg.slope.X <- mean(alleles.clustered$slope[alleles.clustered$group==2])
+avg.slope.Y <- mean(alleles.clustered$slope[alleles.clustered$group==1])
+
+avg.dominance.X <- mean(alleles.clustered$dominance[alleles.clustered$group==2])
+avg.dominance.Y <- mean(alleles.clustered$dominance[alleles.clustered$group==1])
+
+dominance.Y <- avg.dominance.Y / (avg.dominance.X+avg.dominance.Y)
+
+pheno.inter.XX <- avg.inter.X
+pheno.inter.XY <- dominance.Y * avg.inter.Y + (1-dominance.Y) * avg.inter.X
+pheno.slope.XX <- avg.slope.X
+pheno.slope.XY <- dominance.Y * avg.slope.Y + (1-dominance.Y) * avg.slope.X
+
+R <- seq(-1,2,0.001)
+
+clip <- function(x) {
+  return(pmin(pmax(x,0), 1))
+}
+
+par(cex.lab = 1.8, cex.axis = 1.2)
+par(mfrow = c(1,1), mar = c(5, 5, 1, 1) + 0.1, oma = c(0,0,0,0))
+plot(0, 0,
+     type = "n",
+     xlim = c(0, 1),
+     ylim = c(0, 1),
+     xlab = expression(italic(R) * ", resource budget"),
+     ylab = expression(italic(z) * ", sex allocation"))
+abline(h = 0.5, lty = 1, lwd = 3, col = "grey70")
+lines(R, clip(R*pheno.slope.XY + pheno.inter.XY),
+      lwd = 4,
+      lty = 2, 
+      col = "forestgreen")
+lines(R, clip(R*pheno.slope.XX + pheno.inter.XX),
+      lwd = 4,
+      lty = 1,
+      col = "orange2")
+legend("bottomleft", legend = c("females", "hermaphrodites"), 
+       col = c("orange2", "forestgreen"), lty = c(1,2), lwd = 3, bg = "white", 
+       bty = "n", cex = 1.35)

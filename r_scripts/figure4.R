@@ -234,7 +234,9 @@ final_long <- final_long %>%
   mutate(label = ifelse(is.na(ess), "XY", ""))
 
 my_theme <- theme(panel.border = element_rect(color = "black",fill = NA, linewidth = 1),
-                  axis.ticks = element_line(linewidth = 0.5, color = "black"))
+                  axis.ticks = element_line(linewidth = 0.5, color = "black"),
+                  strip.text = element_blank(),
+                  strip.background = element_blank())
 
 # actual plots
 means <- ggplot(data = final_long %>% filter(param == "means"), aes(x = alpha, y = m, fill = ess)) + 
@@ -242,7 +244,7 @@ means <- ggplot(data = final_long %>% filter(param == "means"), aes(x = alpha, y
   #geom_text(aes(label = label), size = 2)+
   scale_fill_gradient2(low = "darkblue", mid = "white", high = "orange2", midpoint = 0.5) +
   facet_grid(delta ~ .) +
-  labs(x = "\u03B1", y = "m", fill = "Mean SA") +
+  labs(x = "", y = "m", fill = "Mean SA") +
   theme_test() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle = 70, hjust = 1)) +
@@ -254,7 +256,7 @@ intercepts <- ggplot(data = final_long %>% filter(param == "intercepts"), aes(x 
   #scale_fill_gradient2(low = "chartreuse4", mid = "gold2", high = "darkmagenta", midpoint = 0.5) +
   facet_grid(delta ~ .) +
   #labs(x = "\u03B1", y = "m", fill = "\u2113") +
-  labs(x = "\u03B1", y = "", fill = expression(italic(h))) +
+  labs(x = "", y = "", fill = expression(italic(h))) +
   theme_test() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle = 70, hjust = 1)) +
@@ -271,6 +273,10 @@ slopes <- ggplot(data = final_long %>% filter(param == "slopes"), aes(x = alpha,
   my_theme
 slopes
 
-png("figures/figure4.png", width = 2000, height = 2400, res = 300)
-(means | slopes | intercepts)
+png("figures/parameter_sweep.png", width = 2170, height = 2400, res = 300)
+(means | slopes | intercepts) & theme(plot.margin = margin(t = 5, r = 15, b = 5, l = 5))
+grid::grid.text(expression(delta * " = 0"), x = 0.97, y = 0.79, just = "right", rot = 270)
+grid::grid.text(expression(delta * " = 0.4"), x = 0.97, y = 0.57, just = "right", rot = 270)
+grid::grid.text(expression(delta * " = 0.6"), x = 0.97, y = 0.36, just = "right", rot = 270)
+grid::grid.text(expression(delta * " = 0.8"), x = 0.97, y = 0.15, just = "right", rot = 270)
 dev.off()
